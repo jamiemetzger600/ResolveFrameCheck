@@ -92,6 +92,18 @@ def _key(clip: Clip, suffixes, is_transcode: bool) -> str:
     return normalize_stem(base, suffixes if is_transcode else [])
 
 
+_RED_SEGMENT = re.compile(r"_\d{3}$")
+
+
+def _match_stem(stem: str, by_stem: Dict[str, List[Clip]]) -> str:
+    """RED raws carry a _001 segment suffix the transcode lacks; fall back to the stripped stem."""
+    if stem not in by_stem:
+        stripped = _RED_SEGMENT.sub("", stem)
+        if stripped in by_stem:
+            return stripped
+    return stem
+
+
 def compare(raws: List[Clip], transcodes: List[Clip], suffixes=None, fps_tol=0.01) -> List[Result]:
     by_stem: Dict[str, List[Clip]] = {}
     for t in transcodes:
@@ -100,7 +112,7 @@ def compare(raws: List[Clip], transcodes: List[Clip], suffixes=None, fps_tol=0.0
     results: List[Result] = []
     used = set()
     for r in raws:
-        stem = _key(r, suffixes, False)
+        stem = _match_stem(_key(r, suffixes, False), by_stem)
         matches = by_stem.get(stem, [])
         used.add(stem)
         if not matches:

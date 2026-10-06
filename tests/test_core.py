@@ -30,6 +30,14 @@ class T(unittest.TestCase):
         r = core.compare([C("/r/A1.braw", 10)], [C("/t/a1_PROXY.mov", 10)])[0]
         self.assertEqual(r.status, core.OK)
 
+    def test_red_segment_suffix(self):
+        r = core.compare([C("/r/A001_C005_100668_001.R3D", 100)], [C("/t/A001_C005_100668.mov", 100)])
+        self.assertEqual([(x.status, x.stem) for x in r], [(core.OK, "a001_c005_100668")])
+
+    def test_exact_match_preferred_over_red_strip(self):
+        r = core.compare([C("/r/A1_001.braw", 10)], [C("/t/A1_001.mov", 10), C("/t/A1.mov", 10)])
+        self.assertEqual(sorted((x.status, x.stem) for x in r), [(core.OK, "a1_001"), (core.ORPHAN, "a1")])
+
     def test_ambiguous(self):
         r = core.compare([C("/r/A1.braw", 10)], [C("/t/A1.mov", 10), C("/u/A1.mp4", 10)])[0]
         self.assertEqual(r.status, core.AMBIGUOUS)
