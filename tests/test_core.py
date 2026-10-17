@@ -34,6 +34,21 @@ class T(unittest.TestCase):
         r = core.compare([C("/r/A001_C005_100668_001.R3D", 100)], [C("/t/A001_C005_100668.mov", 100)])
         self.assertEqual([(x.status, x.stem) for x in r], [(core.OK, "a001_c005_100668")])
 
+    def test_dng_sequence_first_frame(self):
+        r = core.compare([C("/r/D0004C001_261017_232721UY_BGTMP_00000000.DNG", 1753)],
+                         [C("/t/D0004C001_261017_232721UY_BGTMP.mov", 1753)])
+        self.assertEqual([(x.status, x.stem, x.delta) for x in r], [(core.OK, "d0004c001_261017_232721uy_bgtmp", 0)])
+
+    def test_dng_sequence_bracket_range(self):
+        r = core.compare([C("/r/D0004C001_261017_232721UY_BGTMP_[00000000-00001752].DNG", 1753)],
+                         [C("/t/D0004C001_261017_232721UY_BGTMP.mov", 1750)])
+        self.assertEqual([(x.status, x.delta) for x in r], [(core.MISMATCH, -3)])
+
+    def test_dng_sequence_folder_name(self):
+        r = core.compare([C("/r/D0004C001_261017_232721UY_BGTMP_f0-1752_dng_261017_124004654", 1753)],
+                         [C("/t/D0004C001_261017_232721UY_BGTMP.mov", 1753)])
+        self.assertEqual([x.status for x in r], [core.OK])
+
     def test_exact_match_preferred_over_red_strip(self):
         r = core.compare([C("/r/A1_001.braw", 10)], [C("/t/A1_001.mov", 10), C("/t/A1.mov", 10)])
         self.assertEqual(sorted((x.status, x.stem) for x in r), [(core.OK, "a1_001"), (core.ORPHAN, "a1")])

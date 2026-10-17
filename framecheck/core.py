@@ -92,15 +92,25 @@ def _key(clip: Clip, suffixes, is_transcode: bool) -> str:
     return normalize_stem(base, suffixes if is_transcode else [])
 
 
-_RED_SEGMENT = re.compile(r"_\d{3}$")
+# Raw-side name decorations that the transcode name never carries:
+#  - RED segment suffix:        A001_C005_100668_001
+#  - image-sequence frame no.:  D0004C001_..._BGTMP_00000000 or ..._[00000000-00001752]
+#    (Resolve drops it when transcoding a CinemaDNG sequence)
+#  - CinemaDNG converter folder: D0004C001_..._BGTMP_f0-1752_dng_261017_124004654
+_RAW_DECORATIONS = [
+    re.compile(r"_\d{3}$"),
+    re.compile(r"[._]\[?\d{4,}(?:-\d{4,})?\]?$"),
+    re.compile(r"_f\d+-\d+_dng_\d+_\d+$"),
+]
 
 
 def _match_stem(stem: str, by_stem: Dict[str, List[Clip]]) -> str:
-    """RED raws carry a _001 segment suffix the transcode lacks; fall back to the stripped stem."""
+    """Fall back to the raw stem minus known decorations when there is no exact match."""
     if stem not in by_stem:
-        stripped = _RED_SEGMENT.sub("", stem)
-        if stripped in by_stem:
-            return stripped
+        for pat in _RAW_DECORATIONS:
+            stripped = pat.sub("", stem)
+            if stripped != stem and stripped in by_stem:
+                return stripped
     return stem
 
 
